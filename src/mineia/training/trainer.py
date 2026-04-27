@@ -65,6 +65,10 @@ class PPOTrainer:
         self.logger = RunLogger(cfg, run_name=run_name)
         self._amp_dtype = autocast_dtype() if cfg["device"].get("amp_dtype") in {"bf16", "fp16"} else None
 
+        log_cfg = cfg.get("logging", {})
+        self.video_every = int(log_cfg.get("video_every_n_updates", 0) or 0)
+        self._video_frames: list[np.ndarray] | None = None  # env-0 POVs for the next clip
+
     def maybe_resume(self) -> int:
         path = self.cfg["checkpoint"].get("resume_from")
         if not path:
@@ -96,6 +100,9 @@ class PPOTrainer:
 
         t0 = time.time()
         for update in range(start_update + 1, total_updates + 1):
+            capture = self.video_every > 0 and update % self.video_every == 0
+            self._video_frames = [] if capture else None
+
             rollout = self._collect_rollout(obs, state, first, ep_returns, ep_lengths)
             obs, state, first = rollout["next_obs"], rollout["next_state"], rollout["next_first"]
             global_step += batch_steps
@@ -108,6 +115,12 @@ class PPOTrainer:
                 "rollout/global_step": global_step,
             })
             self.logger.log_scalars(global_step, metrics)
+
+            if capture and self._video_frames:
+                clip = np.stack(self._video_frames, axis=0)  # (T, H, W, 3) uint8
+                self.logger.log_video(global_step, "rollout/env0_pov", clip)
+                self._video_frames = None
+
             t0 = time.time()
 
             self.ckpt.maybe_save(update, {
@@ -142,6 +155,9 @@ class PPOTrainer:
         done_buf = torch.zeros(T, N, device=self.device)
 
         for t in range(T):
+            if self._video_frames is not None:
+                self._video_frames.append(self._extract_pov_frame(obs, env_idx=0))
+
             obs_t = self._obs_to_tensor(obs)
             with torch.autocast(device_type=self.device.type, dtype=self._amp_dtype) if self._amp_dtype else _NullCtx():
                 logits, value, state = self.policy(obs_t, state, first)
@@ -280,6 +296,15 @@ class PPOTrainer:
         if isinstance(obs, dict):
             return {k: torch.as_tensor(v, device=self.device) for k, v in obs.items()}
         return torch.as_tensor(obs, device=self.device)
+
+    @staticmethod
+    def _extract_pov_frame(obs, env_idx: int = 0) -> np.ndarray:
+        """Pull a single (H, W, 3) uint8 frame for video logging."""
+        if isinstance(obs, dict):
+            frame = obs.get("pov", next(iter(obs.values())))[env_idx]
+        else:
+            frame = obs[env_idx]
+        return np.asarray(frame, dtype=np.uint8)
 
     def _sample(self, logits):
         # VPT logits are a Dict: {action_name: logits}. We sample independently per head.

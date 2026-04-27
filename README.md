@@ -65,6 +65,25 @@ Checkpoints land in `checkpoints/<tag>/` and are rotated (`keep_last: 5` by
 default). Every checkpoint stores model, optimizer, RNG state, and the config
 snapshot, so a resumed run continues bit-exactly.
 
+## Watch the agent
+
+Two ways to see what the agent is doing.
+
+**Passive (no extra cost during training)** - clips of env 0's POV are uploaded
+to W&B every `logging.video_every_n_updates` updates (default 50). Open the
+W&B run, scroll to the `rollout/env0_pov` panel.
+
+**Active (separate process)** - load the latest checkpoint and render a live
+OpenCV window:
+
+```bash
+python scripts/watch.py --config configs/phase1_survival.yaml \
+  --checkpoint checkpoints/phase1_survival/latest.pt
+```
+
+Press `q` to close the window. Safe to run while training is in progress; it
+spawns its own MineRL env and does not touch the trainer.
+
 ## Evaluate
 
 ```bash
