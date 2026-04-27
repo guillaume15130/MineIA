@@ -1,0 +1,49 @@
+defaults: base.yaml
+
+# Phase 3 - Nether & Ender Dragon
+# Goal: build a Nether portal, get blaze rods, craft eyes of ender, find stronghold,
+# enter The End, destroy crystals, kill the dragon.
+phase:
+  name: dragon
+  index: 3
+
+env:
+  id: MineRLObtainDiamondShovel-v0   # we use a custom dragon scenario built on top
+  max_episode_steps: 24000           # 20 min real-time @ 20 ticks/s
+  resolution: [128, 128]
+
+ppo:
+  total_timesteps: 20_000_000
+  ent_coef: 0.005
+  learning_rate: 5.0e-6              # gentler updates near convergence
+  rollout_steps: 1024
+  gamma: 0.9995                      # very long-horizon credit assignment
+
+reward:
+  shaper: dragon
+  item_rewards:
+    obsidian: 1.0
+    flint_and_steel: 2.0
+    nether_portal_lit: 5.0
+    blaze_rod: 4.0
+    ender_pearl: 3.0
+    eye_of_ender: 5.0
+    stronghold_entered: 10.0
+    end_portal_lit: 25.0
+    end_dimension_entered: 50.0
+  event_rewards:
+    end_crystal_destroyed: 15.0     # 10 crystals -> +150 total
+    dragon_damage_dealt: 0.5        # per HP of dragon damage
+    dragon_phase_perched: 5.0
+    dragon_killed: 1000.0
+    agent_death: -25.0
+
+checkpoint:
+  tag: phase3_dragon
+  resume_from: checkpoints/phase2_crafting/latest.pt
+  every_n_updates: 10                # save more often, runs are expensive
+
+logging:
+  wandb:
+    tags: [phase3, dragon, end-game]
+  video_every_n_updates: 20

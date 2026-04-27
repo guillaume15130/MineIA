@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mineia"
+version = "0.1.0"
+description = "Reinforcement learning agent that learns to defeat the Ender Dragon in Minecraft."
+requires-python = ">=3.10"
+# Note: MineRL 1.0.x is only tested on Python 3.10. Use 3.10 for full training;
+# 3.11+ works for the non-MineRL parts (configs, rewards, checkpointing, tests).
+authors = [{ name = "MineIA" }]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

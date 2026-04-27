@@ -1,0 +1,54 @@
+# Shared defaults inherited by every phase config.
+project: mineia
+seed: 42
+
+device:
+  prefer: cuda            # cuda | cpu
+  amp_dtype: bf16         # bf16 (Ada/Ampere) | fp16 | fp32
+
+env:
+  id: MineRLBasaltFindCave-v0    # placeholder, overridden per phase
+  num_envs: 4                    # 4 parallel envs fits comfortably in 16 GB w/ VPT-2x
+  resolution: [128, 128]
+  frame_skip: 4
+  max_episode_steps: 6000
+  noop_action_repeat: 0
+
+vpt:
+  # See scripts/download_vpt.py for sources. 2x is the sweet spot for a 4080.
+  model_size: "2x"               # 1x | 2x | 3x
+  weights_dir: weights/vpt
+  policy_weights: foundation-model-2x.weights
+  model_def: foundation-model-2x.model
+  freeze_backbone: false         # full fine-tune; set true to only train heads
+
+ppo:
+  total_timesteps: 5_000_000
+  rollout_steps: 256
+  num_epochs: 3
+  batch_size: 512
+  minibatch_size: 64
+  learning_rate: 1.0e-5          # low LR because we fine-tune VPT
+  clip_range: 0.2
+  vf_coef: 0.5
+  ent_coef: 0.01
+  gamma: 0.999
+  gae_lambda: 0.95
+  max_grad_norm: 0.5
+  target_kl: 0.03
+
+checkpoint:
+  dir: checkpoints
+  every_n_updates: 25
+  keep_last: 5
+  resume_from: null               # path to .pt to resume from, or null
+
+logging:
+  wandb:
+    enabled: true
+    project: mineia
+    entity: null                  # set your W&B username/team here
+    tags: []
+  tensorboard: true
+  log_every_n_steps: 100
+  video_every_n_updates: 50

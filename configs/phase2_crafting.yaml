@@ -1,0 +1,44 @@
+defaults: base.yaml
+
+# Phase 2 - Crafting & mining
+# Goal: gather wood -> stone -> iron -> diamond, craft tools and armor.
+phase:
+  name: crafting
+  index: 2
+
+env:
+  id: MineRLObtainDiamondShovel-v0
+  max_episode_steps: 8000
+
+ppo:
+  total_timesteps: 8_000_000
+  ent_coef: 0.01
+  rollout_steps: 512                # longer horizon needed for multi-step recipes
+
+reward:
+  shaper: crafting
+  # Tech-tree rewards. First time the agent obtains an item per episode.
+  item_rewards:
+    log: 1.0
+    planks: 0.5
+    crafting_table: 1.0
+    wooden_pickaxe: 2.0
+    cobblestone: 0.5
+    stone_pickaxe: 3.0
+    furnace: 2.0
+    iron_ore: 2.0
+    iron_ingot: 4.0
+    iron_pickaxe: 6.0
+    iron_sword: 6.0
+    diamond: 10.0
+    diamond_pickaxe: 15.0
+  alive_bonus: 0.0
+  death: -5.0
+
+checkpoint:
+  tag: phase2_crafting
+  resume_from: checkpoints/phase1_survival/latest.pt
+
+logging:
+  wandb:
+    tags: [phase2, crafting]

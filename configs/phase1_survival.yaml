@@ -1,0 +1,31 @@
+defaults: base.yaml
+
+# Phase 1 - Survival
+# Goal: stay alive, eat, sleep, avoid mobs. Learn fundamental motor control.
+phase:
+  name: survival
+  index: 1
+
+env:
+  id: MineRLObtainDiamondShovel-v0   # offers food/wood/early-game tasks; we override the reward
+  max_episode_steps: 4000
+
+ppo:
+  total_timesteps: 2_000_000
+  ent_coef: 0.02                     # encourage exploration in the easiest phase
+
+reward:
+  shaper: survival
+  weights:
+    alive_bonus: 0.001               # per step
+    food_gain: 1.0
+    health_loss: -1.0
+    death: -10.0
+    night_survived: 5.0
+
+checkpoint:
+  tag: phase1_survival
+
+logging:
+  wandb:
+    tags: [phase1, survival]

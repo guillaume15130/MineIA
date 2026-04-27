@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+
+# Project artifacts (large)
+checkpoints/*
+!checkpoints/.gitkeep
+logs/*
+!logs/.gitkeep
+wandb/
+runs/
+data/
+videos/
+*.pt
+*.pth
+*.ckpt
+*.weights
+*.model
+
+# VPT downloaded weights
+weights/
+*.bin
+
+# MineRL / Java
+*.log
+*.lock
+
+# Env vars
+.env
